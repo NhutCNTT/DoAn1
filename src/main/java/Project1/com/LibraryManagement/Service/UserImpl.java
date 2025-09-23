@@ -1,7 +1,7 @@
 package Project1.com.LibraryManagement.Service;
 
 import Project1.com.LibraryManagement.Entity.Users;
-import Project1.com.LibraryManagement.Repository.UsersRepos;
+import Project1.com.LibraryManagement.Repository.UserRepos;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public class UserImpl implements UserService{
     @Autowired
-    public UsersRepos usersRepos;
+    public UserRepos usersRepos;
 
     @Override
     public boolean existsUser(String email) {
