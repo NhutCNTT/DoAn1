@@ -1,0 +1,758 @@
+<!-- templates/library/circulation.html -->
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lưu thông — Thư viện CTUT</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="64x64" th:href="@{/images/logo_tab.PNG}" />
+
+    <!-- Bootstrap & Icons (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"/>
+
+    <!-- CSS dự án (từ /static) -->
+    <link rel="stylesheet" th:href="@{/css/library/header.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/sidebar.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/layout.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/circulation.css}" />
+
+    <style>
+        .modal.modal-fixed-scroll .modal-body{max-height:calc(100vh - 12rem);overflow:auto;}
+        @media (max-width:576px){
+            .modal.modal-fixed-scroll .modal-dialog{margin:0;}
+            .modal.modal-fixed-scroll .modal-body{max-height:calc(100vh - 9rem);}
+        }
+    </style>
+</head>
+
+<body>
+<!-- Header (fragment) -->
+<div th:replace="components/library/header :: header"></div>
+
+<div class="app-layout d-flex">
+    <!-- Sidebar (fragment, đánh dấu menu đang active) -->
+    <aside th:replace="components/library/sidebar :: sidebar('circulation')"></aside>
+
+    <!-- Main -->
+    <main class="flex-grow-1">
+        <div class="container py-4">
+
+            <!-- Tabs + actions -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <ul class="nav nav-tabs m-0">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#borrow-pane" type="button" role="tab" aria-controls="borrow-pane" aria-selected="true">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Đang mượn
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#return-pane" type="button" role="tab" aria-controls="return-pane" aria-selected="false">
+                            <i class="bi bi-box-arrow-up me-1"></i> Trả
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#overdue-pane" type="button" role="tab" aria-controls="overdue-pane" aria-selected="false">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Quá hạn
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab" aria-controls="history-pane" aria-selected="false">
+                            <i class="bi bi-clock-history me-1"></i> Lịch sử
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="d-flex ms-auto gap-2">
+                    <button id="btnOpenLoan" class="btn btn-primary" type="button">
+                        <i class="bi bi-file-earmark-plus me-1"></i> Tạo phiếu mượn
+                    </button>
+                    <button id="btnOpenReserveList" class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-journal-text me-1"></i> Danh sách yêu cầu
+                        <span id="reserveBadge" class="badge text-bg-secondary align-middle ms-1" style="display:none">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-content">
+                <!-- ĐANG MƯỢN -->
+                <div class="tab-pane fade show active" id="borrow-pane">
+                    <div class="card mt-0">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" id="tblBorrow">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Độc giả</th><th>Mã sách</th><th>Tiêu đề</th><th>Ngày mượn</th><th>Hạn trả</th><th>Trạng thái</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbBorrowBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRẢ -->
+                <div class="tab-pane fade" id="return-pane">
+                    <div class="card mt-0">
+                        <div class="card-body border-bottom">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto">
+                                    <label for="returnReaderId" class="col-form-label">Mã độc giả:</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input id="returnReaderId" class="form-control" placeholder="VD: DG00123"/>
+                                </div>
+                                <div class="col-auto">
+                                    <button id="btnFindLoans" class="btn btn-outline-primary" type="button">
+                                        <i class="bi bi-search me-1"></i> Tìm
+                                    </button>
+                                </div>
+                                <div class="col-auto ms-auto">
+                                    <span id="returnCount" class="text-muted small">0 sách đang mượn</span>
+                                </div>
+                                <div class="col-auto">
+                                    <button id="btnReturnSelected" class="btn btn-success" type="button" disabled>
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Trả đã chọn
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" id="tblReturn">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width:36px"><input type="checkbox" id="chkAllReturn"/></th>
+                                    <th>#</th><th>Mã sách</th><th>Tiêu đề</th><th>Hạn trả</th><th>Trạng thái</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbReturnBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUÁ HẠN -->
+                <div class="tab-pane fade" id="overdue-pane">
+                    <div class="card mt-0">
+                        <div class="card-body border-bottom">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto">
+                                    <label for="extendDays" class="col-form-label">Gia hạn thêm (ngày):</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input id="extendDays" type="number" min="1" value="7" class="form-control" style="width:120px"/>
+                                </div>
+                                <div class="col-auto ms-auto d-flex gap-2">
+                                    <button id="btnMarkExtend" class="btn btn-outline-warning" type="button">
+                                        <i class="bi bi-envelope-open me-1"></i> Nhận yêu cầu gia hạn
+                                    </button>
+                                    <button id="btnDoExtend" class="btn btn-success" type="button" disabled>
+                                        <i class="bi bi-arrow-repeat me-1"></i> Gia hạn
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" id="tblOverdue">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width:36px"><input type="checkbox" id="chkAllOverdue"/></th>
+                                    <th>#</th><th>Độc giả</th><th>Mã sách</th><th>Tiêu đề</th><th>Hạn trả</th><th>Quá hạn (ngày)</th><th>Yêu cầu</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbOverdueBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LỊCH SỬ -->
+                <div class="tab-pane fade" id="history-pane">
+                    <div class="card mt-0">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" id="tblHistory">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>#</th><th>Thời gian</th><th>Loại</th><th>Độc giả</th><th>Mã sách</th><th>Tiêu đề</th><th>Ngày mượn</th><th>Hạn trả</th><th>Ngày trả</th><th>Ghi chú</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbHistoryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Offcanvas & Modals giữ nguyên cấu trúc (rút gọn phần comment trong câu gốc) -->
+
+            <!-- Offcanvas CHI TIẾT -->
+            <div class="offcanvas offcanvas-end" id="detailCanvas" tabindex="-1" aria-labelledby="detailCanvasLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="detailCanvasLabel">Chi tiết yêu cầu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body" id="detailBody"></div>
+                <div class="px-3 pb-3 d-flex gap-2">
+                    <button id="btnDetailReject" class="btn btn-outline-danger w-50" type="button">Từ chối</button>
+                    <button id="btnDetailApprove" class="btn btn-success w-50" type="button">Duyệt</button>
+                </div>
+            </div>
+
+            <!-- Modal TẠO PHIẾU MƯỢN -->
+            <div class="modal fade modal-fixed-scroll" id="loanModal" tabindex="-1" aria-labelledby="loanModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <form id="loanForm" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="loanModalLabel"><i class="bi bi-file-earmark-plus me-1"></i> Tạo phiếu mượn</h5>
+                                <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="row g-3">
+                                    <div class="col-sm-6 col-md-4">
+                                        <label class="form-label">Số phiếu</label>
+                                        <input type="text" class="form-control" id="loanId" readonly/>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <label class="form-label">Ngày lập</label>
+                                        <input type="date" class="form-control" id="issueDate" required/>
+                                        <div class="invalid-feedback">Vui lòng chọn ngày lập.</div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <label class="form-label">Hạn trả</label>
+                                        <input type="date" class="form-control" id="dueDate" required/>
+                                        <div class="invalid-feedback">Vui lòng chọn hạn trả.</div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-3"/>
+
+                                <div class="row g-3">
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Mã độc giả</label>
+                                        <input type="text" class="form-control" id="readerId" placeholder="VD: DG00123" required/>
+                                        <div class="invalid-feedback">Nhập mã độc giả.</div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Tên độc giả</label>
+                                        <input type="text" class="form-control" id="readerName" required/>
+                                        <div class="invalid-feedback">Nhập tên độc giả.</div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Khoa/Lớp</label>
+                                        <input type="text" class="form-control" id="readerDept" placeholder="CNTT K47"/>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Liên hệ (Email/ĐT)</label>
+                                        <input type="text" class="form-control" id="readerContact" placeholder="name@email.com / 09..."/>
+                                    </div>
+                                </div>
+
+                                <hr class="my-3"/>
+
+                                <div class="row g-3">
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Mã thủ thư</label>
+                                        <input type="text" class="form-control" id="librarianId" placeholder="TT0001" required/>
+                                        <div class="invalid-feedback">Nhập mã thủ thư.</div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label class="form-label">Tên thủ thư</label>
+                                        <input type="text" class="form-control" id="librarianName" required/>
+                                        <div class="invalid-feedback">Nhập tên thủ thư.</div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-3"/>
+
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h6 class="m-0">Sách mượn</h6>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAddRow">
+                                            <i class="bi bi-plus-lg me-1"></i> Thêm dòng
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id="btnClearRows">
+                                            <i class="bi bi-x-circle me-1"></i> Xóa tất cả
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive mt-2">
+                                    <table class="table table-sm align-middle" id="tblLoanItems">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th style="width:120px">Mã sách</th>
+                                            <th>Tiêu đề</th>
+                                            <th style="width:180px">Tác giả</th>
+                                            <th style="width:160px">NXB</th>
+                                            <th style="width:90px">SL</th>
+                                            <th style="width:160px">Tình trạng</th>
+                                            <th style="width:40px" class="text-end">#</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="loanItemsBody"></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="small text-muted">
+                                    *Gợi ý: nhập <em>Mã sách</em> (barcode) → sau này có thể tự điền các trường khác từ CSDL.
+                                </div>
+
+                                <hr class="my-3"/>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Ghi chú</label>
+                                    <textarea class="form-control" id="note" rows="2" placeholder="Ghi chú đặc biệt (nếu có)"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer d-flex gap-2">
+                                <button id="btnExportLoanCsv" type="button" class="btn btn-outline-secondary" disabled>
+                                    <i class="bi bi-filetype-csv me-1"></i> Xuất CSV
+                                </button>
+                                <button type="submit" class="btn btn-primary ms-auto">
+                                    <i class="bi bi-check2-circle me-1"></i> Tạo phiếu
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal DANH SÁCH YÊU CẦU -->
+            <div class="modal fade modal-fixed-scroll" id="reserveListModal" tabindex="-1" aria-labelledby="reserveListModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="reserveListModalLabel">
+                                <i class="bi bi-journal-text me-1"></i> Danh sách yêu cầu mượn/đặt sách
+                            </h5>
+                            <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0" id="tblReserveList">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>#</th><th>Thời gian</th><th>Độc giả</th><th>Mã sách</th><th>Tiêu đề</th><th>Ghi chú/Liên hệ</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="tbReserveListBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="btnRefreshReserveList" type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                            </button>
+                            <button class="btn btn-primary" data-bs-dismiss="modal" type="button">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Offcanvas THÔNG BÁO -->
+            <div class="offcanvas offcanvas-end" id="offcanvasNotifications" tabindex="-1" aria-labelledby="offcanvasNotificationsLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasNotificationsLabel">
+                        <i class="bi bi-bell me-2"></i>Thông báo
+                    </h5>
+                    <button class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    <div id="notiList" class="list-group list-group-flush"></div>
+                </div>
+            </div>
+
+            <!-- Toast -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                <div id="toastMsg" class="toast text-bg-dark" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body" id="toastBody">...</div>
+                        <button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JS dự án (từ /static) -->
+<script defer th:src="@{/js/library/active-menu.js}"></script>
+<!-- Nếu bạn còn dùng các hàm cho topbar/sidebar, đặt tại /static/js/... -->
+<script defer th:src="@{/js/header.js}"></script>
+<script defer th:src="@{/js/sidebar.js}"></script>
+
+<!-- Script mở modal tạo phiếu -->
+<script>
+    document.getElementById("btnOpenLoan")?.addEventListener("click", () => {
+        new bootstrap.Modal(document.getElementById("loanModal")).show();
+    });
+</script>
+
+<!-- Lịch sử (localStorage) -->
+<script>
+    (function historyTab(){
+        const KEY="circulationHistory"; const tbHistoryBody=document.getElementById("tbHistoryBody");
+        const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}};
+        const write=(arr)=>localStorage.setItem(KEY,JSON.stringify(arr));
+        const typeBadge=(t,a)=>t==="borrow" ? '<span class="badge text-bg-primary">Mượn</span>' :
+            t==="return" ? '<span class="badge text-bg-success">Trả</span>' :
+                `<span class="badge text-bg-secondary">${a||"Khác"}</span>`;
+        const fmt=(iso)=>{try{return new Date(iso).toLocaleString("vi-VN")}catch{return iso||""}};
+        function render(){
+            const rows=read(); if(!rows.length){tbHistoryBody.innerHTML='<tr><td colspan="10" class="text-center text-muted">Chưa có lịch sử.</td></tr>';return;}
+            tbHistoryBody.innerHTML=rows.map((e,i)=>{
+                const reader=[e.readerName, e.readerId?`(${e.readerId})`:""].filter(Boolean).join(" ");
+                const note=e.type==="return"&&e.condition?`Tình trạng: ${e.condition}`:(e.detail||"");
+                return `<tr>
+              <td>${i+1}</td><td>${fmt(e.time)}</td><td>${typeBadge(e.type,e.action)}</td>
+              <td>${reader||"-"}</td><td>${e.barcode||"-"}</td><td>${e.title||"-"}</td>
+              <td>${e.issueDate||"-"}</td><td>${e.dueDate||"-"}</td><td>${e.returnDate||"-"}</td><td>${note||"-"}</td>
+            </tr>`;
+            }).join("");
+        }
+        window.addHistory=(entry)=>{const e={...entry,time:entry.time||new Date().toISOString()};const arr=read();arr.unshift(e);write(arr);
+            if(document.querySelector("#history-pane")?.classList.contains("active")) render();};
+        window.addLog=(action,detail="",extra={})=>window.addHistory({type:"other",action,detail,...extra});
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn=>{
+            btn.addEventListener("shown.bs.tab",()=>{
+                if(btn.getAttribute("data-bs-target")==="#history-pane") render();
+            });
+        });
+    })();
+</script>
+
+<!-- Logic mượn/trả + quá hạn -->
+<script>
+    (function circulationLogic(){
+        const activeLoans=[];
+        const toastEl=document.getElementById("toastMsg"), toastBody=document.getElementById("toastBody");
+        const bsToast=toastEl? new bootstrap.Toast(toastEl):null;
+        const showToast=(m)=>{ if(!bsToast) return; toastBody.textContent=m; bsToast.show(); };
+
+        const toDate=(s)=> s? new Date(s+"T00:00:00"):null;
+        const today=()=>{const d=new Date(); d.setHours(0,0,0,0); return d;};
+        const daysDiff=(a,b)=> Math.floor((a-b)/(1000*60*60*24));
+        const isOverdue=(due)=>{const dd=toDate(due); if(!dd) return false; return daysDiff(today(),dd)>0;};
+        const overdueDays=(due)=> Math.max(0, daysDiff(today(), toDate(due)));
+
+        const tbBorrowBody=document.getElementById("tbBorrowBody");
+        const tbReturnBody=document.getElementById("tbReturnBody");
+        const tbOverdueBody=document.getElementById("tbOverdueBody");
+        const chkAllReturn=document.getElementById("chkAllReturn");
+        const returnReaderId=document.getElementById("returnReaderId");
+        const btnFindLoans=document.getElementById("btnFindLoans");
+        const btnReturnSelected=document.getElementById("btnReturnSelected");
+        const returnCountEl=document.getElementById("returnCount");
+        const extendDaysInput=document.getElementById("extendDays");
+        const btnMarkExtend=document.getElementById("btnMarkExtend");
+        const btnDoExtend=document.getElementById("btnDoExtend");
+
+        const fmtDate=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        const addDaysStr=(dateStr,n)=>{const dt=toDate(dateStr); if(!dt) return dateStr; dt.setDate(dt.getDate()+n); return fmtDate(dt);};
+
+        function renderBorrowTable(){
+            const rows=activeLoans.filter(x=>!x.returned);
+            tbBorrowBody.innerHTML=rows.map((x,i)=>`
+            <tr>
+              <td>${i+1}</td>
+              <td>${x.readerName} <small class="text-muted">(${x.readerId})</small></td>
+              <td>${x.barcode||"-"}</td><td>${x.title||"-"}</td>
+              <td>${x.issueDate||"-"}</td><td>${x.dueDate||"-"}</td>
+              <td>${isOverdue(x.dueDate)? `<span class="badge text-bg-danger">Quá hạn ${overdueDays(x.dueDate)} ngày</span>`: `<span class="badge text-bg-primary">Đang mượn</span>`}</td>
+            </tr>`).join("");
+        }
+
+        function renderOverdueTable(){
+            const rows=activeLoans.filter(x=>!x.returned && isOverdue(x.dueDate));
+            tbOverdueBody.innerHTML=rows.map((x,i)=>`
+            <tr data-key="${x.loanId}|${x.barcode}">
+              <td><input type="checkbox" class="form-check-input selOverdue"/></td>
+              <td>${i+1}</td>
+              <td>${x.readerName} <small class="text-muted">(${x.readerId})</small></td>
+              <td>${x.barcode||"-"}</td><td>${x.title||"-"}</td>
+              <td>${x.dueDate||"-"}</td>
+              <td><span class="badge text-bg-danger">${overdueDays(x.dueDate)}</span></td>
+              <td>${x.extendRequested?'<span class="badge text-bg-warning">Đã yêu cầu</span>':'-'}</td>
+            </tr>`).join("");
+
+            if(btnDoExtend) btnDoExtend.disabled=true;
+            if(btnMarkExtend) btnMarkExtend.disabled=rows.length===0;
+            if(chkAllOverdue) chkAllOverdue.checked=false;
+        }
+
+        const chkAllOverdue=document.getElementById("chkAllOverdue");
+        function getOverdueSelectedKeys(){
+            return Array.from(tbOverdueBody.querySelectorAll(".selOverdue:checked"))
+                .map(cb=>cb.closest("tr")?.getAttribute("data-key")).filter(Boolean);
+        }
+        function updateExtendBtnsState(){
+            const any=getOverdueSelectedKeys().length>0;
+            if(btnDoExtend) btnDoExtend.disabled=!any;
+            if(btnMarkExtend) btnMarkExtend.disabled=!any;
+        }
+        chkAllOverdue?.addEventListener("change",()=>{
+            tbOverdueBody.querySelectorAll(".selOverdue").forEach(cb=>cb.checked=chkAllOverdue.checked);
+            updateExtendBtnsState();
+        });
+        tbOverdueBody.addEventListener("change",(e)=>{
+            if(e.target.classList.contains("selOverdue")) updateExtendBtnsState();
+        });
+
+        btnMarkExtend?.addEventListener("click",()=>{
+            const keys=getOverdueSelectedKeys(); if(!keys.length) return;
+            for(const key of keys){
+                const [loanId,barcode]=key.split("|");
+                const it=activeLoans.find(x=>!x.returned && x.loanId===loanId && x.barcode===barcode);
+                if(it){
+                    it.extendRequested=true;
+                    addHistory({type:"other",action:"Y/c gia hạn",loanId:it.loanId,readerId:it.readerId,readerName:it.readerName,barcode:it.barcode,title:it.title,dueDate:it.dueDate,detail:"Ghi nhận yêu cầu gia hạn"});
+                }
+            }
+            showToast("Đã ghi nhận yêu cầu gia hạn."); renderOverdueTable();
+        });
+
+        btnDoExtend?.addEventListener("click",()=>{
+            const days=Math.max(1, parseInt(extendDaysInput?.value||"0",10));
+            const keys=getOverdueSelectedKeys(); if(!keys.length) return;
+            for(const key of keys){
+                const [loanId,barcode]=key.split("|");
+                const it=activeLoans.find(x=>!x.returned && x.loanId===loanId && x.barcode===barcode);
+                if(it){
+                    const oldDue=it.dueDate; const newDue=addDaysStr(it.dueDate,days);
+                    it.dueDate=newDue; it.extendRequested=false; it.extendedTimes=(it.extendedTimes||0)+1;
+                    addHistory({type:"other",action:"Gia hạn",loanId:it.loanId,readerId:it.readerId,readerName:it.readerName,barcode:it.barcode,title:it.title,issueDate:it.issueDate,dueDate:newDue,detail:`+${days} ngày (từ ${oldDue} → ${newDue})`});
+                }
+            }
+            showToast("Đã gia hạn hạn trả."); renderBorrowTable(); renderOverdueTable();
+        });
+
+        function findLoansByReader(id){const rid=(id||"").trim().toLowerCase(); return activeLoans.filter(x=>!x.returned && x.readerId.toLowerCase()===rid);}
+        function renderReturnList(readerId){
+            const rows=findLoansByReader(readerId);
+            returnCountEl.textContent=`${rows.length} sách đang mượn`;
+            tbReturnBody.innerHTML=rows.map((x,i)=>`
+            <tr data-key="${x.loanId}|${x.barcode}">
+              <td><input type="checkbox" class="form-check-input selReturn"/></td>
+              <td>${i+1}</td><td>${x.barcode||"-"}</td><td>${x.title||"-"}</td><td>${x.dueDate||"-"}</td>
+              <td>${isOverdue(x.dueDate)? `<span class="badge text-bg-danger">Quá hạn ${overdueDays(x.dueDate)} ngày</span>`:`<span class="badge text-bg-primary">Đang mượn</span>`}</td>
+            </tr>`).join("");
+            btnReturnSelected.disabled=rows.length===0; chkAllReturn.checked=false;
+        }
+        function markReturnedByKeys(keys){
+            let count=0; const todayStr=new Date().toISOString().slice(0,10);
+            for(const key of keys){
+                const [loanId,barcode]=key.split("|");
+                const it=activeLoans.find(x=>!x.returned && x.loanId===loanId && x.barcode===barcode);
+                if(it){ it.returned=true; it.returnDate=todayStr; count++;
+                    addHistory({type:"return",loanId:it.loanId,readerId:it.readerId,readerName:it.readerName,barcode:it.barcode,title:it.title,dueDate:it.dueDate,returnDate:it.returnDate});
+                }
+            }
+            if(count){ showToast(`Đã trả ${count} sách.`); renderBorrowTable(); renderOverdueTable(); }
+            return count;
+        }
+
+        const btnPrev=document.getElementById("btnPrev"); // nếu bạn bổ sung phân trang thực
+        const btnNext=document.getElementById("btnNext");
+
+        const chkAllReturn=document.getElementById("chkAllReturn");
+        btnFindLoans.addEventListener("click",()=>renderReturnList(returnReaderId.value));
+        chkAllReturn.addEventListener("change",()=>{
+            tbReturnBody.querySelectorAll(".selReturn").forEach(cb=>cb.checked=chkAllReturn.checked);
+        });
+        btnReturnSelected.addEventListener("click",()=>{
+            const checked=Array.from(tbReturnBody.querySelectorAll(".selReturn:checked"))
+                .map(cb=>cb.closest("tr")?.getAttribute("data-key")).filter(Boolean);
+            if(!checked.length) return;
+            markReturnedByKeys(checked);
+            renderReturnList(returnReaderId.value);
+        });
+
+        // FORM TẠO PHIẾU
+        const form=document.getElementById("loanForm");
+        const loanIdEl=document.getElementById("loanId");
+        const issueDateEl=document.getElementById("issueDate");
+        const dueDateEl=document.getElementById("dueDate");
+        const itemsBody=document.getElementById("loanItemsBody");
+        const btnAddRow=document.getElementById("btnAddRow");
+        const btnClearRows=document.getElementById("btnClearRows");
+        const btnExportCsv=document.getElementById("btnExportLoanCsv");
+
+        const fmtDateInput=(d)=> d.toISOString().slice(0,10);
+        const addDays=(d,n)=>{const x=new Date(d); x.setDate(x.getDate()+n); return x;};
+
+        document.getElementById("loanModal").addEventListener("show.bs.modal",()=>{
+            const now=new Date();
+            loanIdEl.value=`PM${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+            issueDateEl.value=fmtDateInput(now);
+            dueDateEl.value=fmtDateInput(addDays(now,7));
+            if(itemsBody.children.length===0) addRow();
+            updateExportState();
+        });
+
+        btnAddRow.addEventListener("click",addRow);
+        btnClearRows.addEventListener("click",()=>{itemsBody.innerHTML=""; updateExportState();});
+
+        function addRow(){
+            const tr=document.createElement("tr");
+            tr.innerHTML=`
+            <td><input class="form-control form-control-sm item-barcode" placeholder="Barcode" required></td>
+            <td><input class="form-control form-control-sm item-title" placeholder="Tiêu đề" required></td>
+            <td><input class="form-control form-control-sm item-author" placeholder="Tác giả"></td>
+            <td><input class="form-control form-control-sm item-publisher" placeholder="NXB / Năm"></td>
+            <td style="width:90px;"><input type="number" min="1" value="1" class="form-control form-control-sm item-qty" required></td>
+            <td>
+              <select class="form-select form-select-sm item-cond">
+                <option value="tot">Tốt</option>
+                <option value="cu">Cũ</option>
+                <option value="hu-nhe">Hư nhẹ</option>
+                <option value="hu-nang">Hư nặng</option>
+              </select>
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-danger btnRemoveRow" title="Xóa dòng">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>`;
+            itemsBody.appendChild(tr);
+            tr.querySelector(".btnRemoveRow").addEventListener("click",()=>{tr.remove(); updateExportState();});
+            tr.querySelectorAll("input,select").forEach(el=>{
+                el.addEventListener("input",updateExportState);
+                el.addEventListener("change",updateExportState);
+            });
+            updateExportState();
+        }
+
+        function getItems(){
+            return Array.from(itemsBody.querySelectorAll("tr")).map((tr,idx)=>({
+                stt:idx+1,
+                barcode: tr.querySelector(".item-barcode")?.value?.trim()||"",
+                title: tr.querySelector(".item-title")?.value?.trim()||"",
+                author: tr.querySelector(".item-author")?.value?.trim()||""
+            })).filter(it=>it.barcode||it.title);
+        }
+        function updateExportState(){ btnExportCsv.disabled = getItems().length===0; }
+
+        btnExportCsv.addEventListener("click",()=>{
+            const items=getItems(); if(!items.length) return;
+            const header=["LoanId","IssueDate","DueDate","ReaderId","ReaderName","ReaderDept","ReaderContact","LibrarianId","LibrarianName","ItemNo","Barcode","Title","Author","Publisher","Qty","Condition"];
+            const esc=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+            const ri={
+                LoanId:document.getElementById("loanId").value,
+                IssueDate:document.getElementById("issueDate").value,
+                DueDate:document.getElementById("dueDate").value,
+                ReaderId:document.getElementById("readerId").value,
+                ReaderName:document.getElementById("readerName").value,
+                ReaderDept:document.getElementById("readerDept").value,
+                ReaderContact:document.getElementById("readerContact").value,
+                LibrarianId:document.getElementById("librarianId").value,
+                LibrarianName:document.getElementById("librarianName").value,
+            };
+            const lines=[header.join(",")];
+            items.forEach((it,i)=>{
+                lines.push([ri.LoanId,ri.IssueDate,ri.DueDate,ri.ReaderId,ri.ReaderName,ri.ReaderDept,ri.ReaderContact,ri.LibrarianId,ri.LibrarianName,i+1,it.barcode,it.title,it.author,"","1","tot"].map(esc).join(","));
+            });
+            const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
+            const a=document.createElement("a"); a.href=url; a.download=`${ri.LoanId}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            showToast("Đã xuất CSV phiếu mượn.");
+        });
+
+        form.addEventListener("submit",(e)=>{
+            e.preventDefault(); e.stopPropagation();
+            if(!form.checkValidity()){ form.classList.add("was-validated"); showToast("Vui lòng nhập đủ các trường bắt buộc."); return; }
+
+            const issue=document.getElementById("issueDate").value;
+            const due=document.getElementById("dueDate").value;
+            const issueDt=toDate(issue), dueDt=toDate(due);
+            if(isFinite(issueDt)&&isFinite(dueDt)&& dueDt<issueDt){
+                document.getElementById("dueDate").setCustomValidity("Hạn trả phải sau hoặc bằng ngày lập.");
+                form.classList.add("was-validated"); showToast("Hạn trả phải sau hoặc bằng ngày lập."); return;
+            } else { document.getElementById("dueDate").setCustomValidity(""); }
+
+            const items=getItems(); if(!items.length){ showToast("Vui lòng thêm ít nhất 1 sách."); return; }
+
+            const now=new Date(); const loanId=document.getElementById("loanId").value;
+            const readerId=document.getElementById("readerId").value.trim();
+            const readerName=document.getElementById("readerName").value.trim();
+
+            items.forEach(it=>{
+                activeLoans.push({loanId,readerId,readerName,barcode:it.barcode,title:it.title,author:it.author,issueDate:issue,dueDate:due,returned:false});
+                addHistory({type:"borrow",loanId,readerId,readerName,barcode:it.barcode,title:it.title,issueDate:issue,dueDate:due,time:now.toISOString()});
+            });
+
+            renderBorrowTable(); renderOverdueTable();
+
+            bootstrap.Modal.getInstance(document.getElementById("loanModal"))?.hide();
+            const libId=document.getElementById("librarianId").value;
+            const libName=document.getElementById("librarianName").value;
+            form.reset(); document.getElementById("loanItemsBody").innerHTML=""; form.classList.remove("was-validated");
+            document.getElementById("librarianId").value=libId; document.getElementById("librarianName").value=libName;
+            showToast("Đã tạo phiếu mượn.");
+        });
+
+        // Khởi tạo
+        renderBorrowTable(); renderOverdueTable();
+
+        // Log trong offcanvas chi tiết
+        (function attachDetailLog(){
+            const btnApprove=document.getElementById("btnDetailApprove");
+            const btnReject=document.getElementById("btnDetailReject");
+            const detailBody=document.getElementById("detailBody");
+            const ctx=()=>({librarian:document.getElementById("librarianName")?.value||"", detail:detailBody?.textContent||""});
+            btnApprove?.addEventListener("click",()=>{ addLog("Duyệt mượn (chi tiết)","",ctx()); showToast("Đã duyệt (ghi lịch sử)."); });
+            btnReject?.addEventListener("click",()=>{ addLog("Từ chối mượn (chi tiết)","",ctx()); showToast("Đã từ chối (ghi lịch sử)."); });
+        })();
+
+    })();
+</script>
+
+<!-- Danh sách yêu cầu (dựa trên lịch sử) -->
+<script>
+    (function reserveListFeature(){
+        const HISTORY_KEY="circulationHistory";
+        const btnOpen=document.getElementById("btnOpenReserveList");
+        const badge=document.getElementById("reserveBadge");
+        const tbody=document.getElementById("tbReserveListBody");
+        const btnRefresh=document.getElementById("btnRefreshReserveList");
+
+        const read=()=>{try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch{return[]}};
+        const isReserve=(e)=> e && e.type==="other" && (String(e.action||"").toLowerCase().includes("y/c đặt sách")||String(e.action||"").toLowerCase().includes("y/c mượn"));
+        const fmt=(iso)=>{try{return new Date(iso).toLocaleString("vi-VN")}catch{return iso||""}};
+        const safe=(s)=>String(s??"").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+        const getRows=()=> read().filter(isReserve);
+        function renderTable(){
+            const rows=getRows();
+            if(!rows.length){ tbody.innerHTML='<tr><td colspan="6" class="text-center text-muted">Chưa có yêu cầu.</td></tr>'; return; }
+            tbody.innerHTML=rows.map((e,i)=>`
+            <tr>
+              <td>${i+1}</td>
+              <td>${fmt(e.time)}</td>
+              <td>${safe([e.readerName, e.readerId?`(${e.readerId})`:""].filter(Boolean).join(" "))}</td>
+              <td>${safe(e.barcode||"-")}</td>
+              <td>${safe(e.title||"-")}</td>
+              <td>${safe(e.detail||"")}</td>
+            </tr>`).join("");
+        }
+        function updateBadge(){
+            const n=getRows().length; if(!badge) return;
+            if(n>0){badge.textContent=n; badge.style.display="";} else {badge.style.display="none";}
+        }
+
+        btnOpen?.addEventListener("click",()=>{ updateBadge(); renderTable(); new bootstrap.Modal(document.getElementById("reserveListModal")).show(); });
+        btnRefresh?.addEventListener("click",()=>{ renderTable(); updateBadge(); });
+        updateBadge();
+        window.addEventListener("storage",(ev)=>{ if(ev.key===HISTORY_KEY) updateBadge(); });
+    })();
+</script>
+</body>
+</html>
