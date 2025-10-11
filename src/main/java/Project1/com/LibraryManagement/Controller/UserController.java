@@ -33,16 +33,16 @@ public class UserController {
     @Autowired
     public PasswordEncoder passwordEncoder;
 
-    @GetMapping("/login")
+    @GetMapping("user/login")
     public String login(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)){
             return "redirect:/home";  //return home page when login success
         }
-        return "login"; //when fail return login page
+        return "user/login"; //when fail return login page
     }
 
-    @PostMapping("/login")
+    @PostMapping("user/login")
     public String processLogin(Model model, Users users){
         Optional<Users> existsUsers = usersRepos.findByEmail(users.getEmail());
         if(existsUsers.isPresent()){
@@ -55,7 +55,7 @@ public class UserController {
                 );
                 //Set Security Context
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                return "redirect:/login";
+                return "redirect:user/login";
 
             }
             else {
@@ -66,7 +66,7 @@ public class UserController {
         else {
             model.addAttribute("Error","Email Or Password Is Not Correct");
         }
-        return "login";
+        return "user/login";
     }
 
 

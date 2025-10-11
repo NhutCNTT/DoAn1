@@ -1,0 +1,565 @@
+
+
+/* Text trong hero */
+section.position-relative .translate-middle {
+    position: relative;
+    z-index: 2;
+    /* nằm trên overlay */
+    color: #0056d2;
+    /* màu xanh chủ đạo */
+}
+
+/* Ảnh banner */
+section.hero-banner img {
+    width: 100%;
+    height: 500px;
+    /* hoặc 600px, tùy chiều cao banner bạn muốn */
+    object-fit: cover;
+    /* lấp đầy khung, giữ tỉ lệ */
+}
+
+
+
+/* ============ BIẾN DỄ CHỈNH ============ */
+:root {
+  --brand: #1d3a73;         /* xanh đậm thương hiệu */
+  --brand-light: #2f6ae0;   /* xanh sáng cho glow */
+  --radius: 50px;
+  --height: 55px;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-blur: 8px;
+  --divider: rgba(0, 0, 0, 0.1);
+}
+
+/* Container nằm chồng trên ảnh */
+.search-container {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 900px;
+  z-index: 5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Form kính mờ + đổ viền xanh */
+.search-form {
+  display: flex;
+  align-items: center;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius);
+  padding: 5px;
+  border: 2px solid var(--brand); /* viền xanh chính */
+  box-shadow: 0 0 8px rgba(47,106,224,0.4); /* glow xanh nhạt */
+  transition: box-shadow 0.3s, border 0.3s;
+}
+
+/* Hiệu ứng glow mạnh hơn khi hover */
+.search-form:hover,
+.search-form:focus-within {
+  border: 2px solid var(--brand-light);
+  box-shadow: 0 0 12px rgba(47,106,224,0.8), 
+              0 0 20px rgba(29,58,115,0.4);
+}
+
+/* Select & Input */
+.search-form select,
+.search-form input {
+  height: var(--height);
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1rem;
+  color: #222;
+  padding: 0 12px;
+}
+
+.search-form select { border-right: 1px solid var(--divider); }
+.search-form input  { flex: 1; }
+
+/* Nút search tròn */
+.search-form .btn-search {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 6px rgba(47,106,224,0.5);
+}
+
+/* Glow xanh khi hover nút */
+.search-form .btn-search:hover {
+  background: var(--brand-light);
+  box-shadow: 0 0 12px rgba(47,106,224,0.9);
+}
+
+/* Ẩn mũi tên mặc định của select */
+.search-form select {
+  appearance: none;           
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: url("data:image/svg+xml;utf8,<svg fill='black' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>") 
+              no-repeat right 12px center;
+  background-size: 20px;   /* tăng size mũi tên (mặc định 14px) */
+
+  padding-right: 40px;     /* chừa rộng thêm cho mũi tên lớn */
+  padding-left: 10px;
+}
+
+/* Hiệu ứng hover cho select */
+.search-form {
+  border: 2px solid rgba(43, 109, 239, 0.9); /* viền xanh gốc */
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+
+  /* Hiệu ứng glow viền */
+  box-shadow: 
+    0 0 5px rgba(29, 58, 115, 0.8),   /* gần, đậm */
+    0 0 15px rgba(29, 58, 115, 0.5),  /* trung bình, nhạt hơn */
+    0 0 30px rgba(29, 58, 115, 0.3);  /* xa, rất nhạt */
+}
+
+
+
+
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .search-box {
+        flex-wrap: wrap;
+        /* cho phép xuống hàng */
+        gap: 5px;
+    }
+
+    .search-box .form-select {
+        flex: 1 0 100%;
+        /* chiếm nguyên 1 hàng */
+    }
+
+    .search-box .btn:last-child {
+        margin-right: 0;
+    }
+}
+
+
+/* ========== KHỐI CÁC CƠ SỞ DƯỚI THANH TÌM KIẾM ========== */
+
+
+.library-sections {
+  margin-top: 80px;     /* khoảng cách phía trên khối */
+  margin-bottom: 80px;  /* khoảng cách phía dưới khối */
+}
+
+.section-btn {
+  border: 2px solid #0056d2;   /* viền xanh */
+  color: #0056d2;              /* chữ xanh */
+  background: #fff;            /* nền trắng */
+  border-radius: 25px;         /* bo tròn */
+  padding: 8px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.section-btn:hover {
+  background: #0056d2;         /* nền xanh khi hover */
+  color: #fff;                 /* chữ trắng */
+  box-shadow: 0 4px 12px rgba(0, 86, 210, 0.3);
+}
+
+
+
+
+
+
+/* ========== CÁC THẺ LOGO CƠ SỞ DỮ LIỆU ========== */
+
+/* ====== Container logo ====== */
+.library-cards {
+  margin-bottom: 40px; /* 🔑 chỉnh khoảng cách dưới toàn khối */
+}
+
+/* ====== Khung chứa logo ====== */
+.partner-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 210px;                 /* 🔑 cố định kích thước đồng bộ */
+  height: 180px;
+  margin: 0 auto;               /* căn giữa trong cột */
+  border-radius: 12px;          /* bo góc nhẹ, nhìn hiện đại */
+  background: inherit;          /* 🔑 lấy đúng màu nền cha, tránh lệch màu */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Hiệu ứng hover */
+.partner-logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15); /* bóng đổ nhẹ */
+}
+
+/* ====== Ảnh logo ====== */
+.partner-logo img {
+  max-width: 80%;               /* logo chiếm tối đa 80% chiều ngang khung */
+  max-height: 80%;              /* logo chiếm tối đa 80% chiều cao khung */
+  object-fit: contain;          /* giữ nguyên tỉ lệ, không méo */
+  display: block;
+  margin: 0;
+  transition: transform 0.25s ease;
+}
+.partner-logo {
+  background: #fff;   /* 🔑 cùng màu với nền web */
+}
+
+/* Hover: logo phóng nhẹ thêm */
+.partner-logo:hover img {
+  transform: scale(1.1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===============================
+   SECTION CONTAINER
+   - Canh giữa nội dung section
+   - Giới hạn chiều rộng tối đa
+================================= */
+.book-section {
+  margin: 40px auto;       /* canh giữa theo chiều ngang + khoảng cách trên dưới */
+  max-width: 1200px;       /* tối đa 1200px để nội dung không quá rộng */
+}
+
+/* ===============================
+   HEADER SECTION
+   - Tiêu đề khu vực + nút xem tất cả
+   - Dùng flexbox để căn 2 bên
+   - Có đường kẻ ngang chạy giữa để tạo điểm nhấn
+================================= */
+.book-section-header {
+  position: relative;      /* cần để pseudo-element ::after định vị tuyệt đối */
+  display: flex;           /* dùng flexbox để căn 2 phần tử (h3 và nút) */
+  justify-content: space-between; /* tiêu đề bên trái, nút bên phải */
+  align-items: center;     /* canh giữa theo chiều dọc */
+  gap: 10px;               /* khoảng cách giữa h3 và nút nếu sát nhau */
+  margin: 120px 0 50px;    /* khoảng cách trên và dưới để header thoáng */
+}
+
+/* ===============================
+   ĐƯỜNG KẺ NGANG Ở GIỮA HEADER
+   - Dùng ::after vẽ line nằm giữa tiêu đề và nút
+   - Dài ra hai bên nhưng chừa khoảng cách 2 mép
+================================= */
+.book-section-header::after {
+  content: "";
+  position: absolute;
+  top: 50%;                /* canh giữa theo chiều dọc */
+  left: 100px;             /* chừa khoảng cách bên trái */
+  right: 120px;            /* chừa khoảng cách bên phải */
+  height: 1px;             /* độ dày đường kẻ */
+  background-color: #000;  /* màu đen cho đường kẻ */
+  transform: translateY(-50%); /* đảm bảo line nằm đúng giữa */
+  z-index: 0;              /* nằm dưới chữ và nút */
+}
+
+/* ===============================
+   TIÊU ĐỀ VÀ NÚT
+   - Đặt nền trắng để che đường kẻ phía sau
+   - Dùng z-index để nổi lên trên
+================================= */
+.book-section-header h3,
+.book-section-header .view-all {
+  position: relative;
+  background-color: #fff; /* nền trắng để line không cắt qua chữ */
+  z-index: 1;
+}
+
+/* ===============================
+   TIÊU ĐỀ (H3)
+   - Font đậm, màu chủ đạo
+   - Padding để tạo cảm giác nhấn mạnh
+================================= */
+.book-section-header h3 {
+  font-size: 1.3rem;       /* cỡ chữ vừa phải */
+  font-weight: 700;        /* đậm */
+  color: #0056d2;          /* màu xanh thương hiệu */
+  padding: 0 12px;         /* tạo khoảng trắng hai bên để h3 tách khỏi line */
+  margin: 0;               /* xóa margin mặc định */
+}
+
+/* ===============================
+   NÚT "XEM TẤT CẢ"
+   - Có border, bo góc nhẹ
+   - Hover đổi màu nền + viền
+================================= */
+.book-section-header .view-all {
+  display: inline-block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000;
+  text-decoration: none;   /* bỏ gạch chân mặc định */
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: all 0.3s ease; /* hiệu ứng hover mượt */
+}
+
+/* Hiệu ứng khi hover: đổi nền và border đậm hơn */
+.book-section-header .view-all:hover {
+  background-color: #f3f3f3;
+  border-color: #999;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==================== HEADER SECTION ==================== */
+/* Phần tiêu đề section nếu có, giữ riêng ở file khác */
+
+
+/* =========================================================
+   =============== GRID BỐ CỤC (CHUNG) =====================
+   ========================================================= */
+/* CHUNG: áp dụng cho tất cả sách trong lưới */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr); /* 6 cột bằng nhau (desktop) */
+  gap: 20px; /* Khoảng cách giữa các sách */
+}
+
+/* RIÊNG: sách lớn (big) chiếm nhiều chỗ hơn để nổi bật */
+.book-item.big {
+  grid-column: span 2; /* chiếm 2 cột */
+  grid-row: span 2;    /* chiếm 2 hàng */
+}
+
+
+/* =========================================================
+   =============== BÌA SÁCH (CHUNG) ========================
+   ========================================================= */
+
+
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* ảnh không méo, lấp đầy khung */
+  display: block;
+}
+
+.book-cover {
+  position: relative; /* để overlay định vị bên trong */
+  aspect-ratio: 2 / 3; /* cao hơn, hẹp hơn */ /* chuẩn tỉ lệ bìa */
+  border-radius: 6px;
+  overflow: hidden;/* bo góc ảnh */
+  background: #fff;/* nền dự phòng khi ảnh chưa load */
+
+  /* Bóng 2 lớp để nổi khối */
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.75),   /* bóng sát viền */
+    0 12px 24px rgba(0,0,0,0.2); /* bóng lan rộng */
+  transition: all 0.3s ease;
+}
+
+/* Hover → sách như được nhấc lên */
+.book-cover:hover {
+  transform: translateY(-8px); /* nhấc lên cao 8px */
+  box-shadow: 
+    0 8px 16px rgba(0,0,0,0.35),
+    0 20px 40px rgba(0,0,0,0.25);
+}
+
+/* Gáy sách (tạo chiều dày) */
+.book-cover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  background: linear-gradient(to left, rgba(0,0,0,0.15), transparent);
+}
+
+
+/* =========================================================
+   =============== OVERLAY (CHUNG) =========================
+   ========================================================= */
+/* Overlay phủ lên ảnh, chứa text + footer */
+.book-overlay {
+  position: absolute;
+  inset: 0; /* phủ kín toàn bộ bìa */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* text ở trên, footer ở dưới */
+  padding: 12px;
+  background: linear-gradient(
+    to top, 
+    rgba(0,0,0,0.55) 20%, /* đáy tối → chữ rõ hơn */
+    transparent 100%
+  );
+  color: #fff;
+  z-index: 2;
+}
+
+
+
+
+
+
+
+
+/* =========================================================
+   =============== TEXT TIÊU ĐỀ + TÁC GIẢ (CHUNG) ==========
+   ========================================================= */
+.book-text {
+  margin-bottom: auto; /* đẩy footer xuống đáy, giữ text ở trên */
+  padding-top: 4px; /* 🔑 tạo khoảng cách 15px với mép trên bìa */
+}
+
+/* Tiêu đề sách */
+.book-title {
+  font-size: 1rem;     /* cỡ chữ mặc định */
+  font-weight: 700;    /* đậm */
+  margin: 0 0 25px;     /* khoảng cách dưới để cách tác giả */
+  line-height: 1.3;    /* dễ đọc nếu tên dài */
+}
+
+/* Tác giả */
+.book-author {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #e0e7ff; /* màu sáng hơn để phân biệt với tiêu đề */
+}
+
+
+/* =========================================================
+   =============== FOOTER LOGO + NĂM (CHUNG) ===============
+   ========================================================= */
+.book-footer {
+  display: flex;
+  justify-content: space-between; /* logo trái – năm phải */
+  align-items: center;
+}
+
+/* Logo mặc định (sách nhỏ & sách thường) */
+.book-logo {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50%;  /* bo tròn logo */
+  background: #fff;
+  object-fit: contain;
+  padding: 2px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.3); /* đổ bóng nhẹ */
+}
+
+/* Năm xuất bản */
+.book-year {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* tạo chiều sâu */
+}
+
+
+/* =========================================================
+   =============== STYLE RIÊNG CHO SÁCH LỚN ================
+   ========================================================= */
+.book-item.big .book-title {
+  font-size: 1.4rem; /* tên sách lớn hơn */
+  
+}
+
+.book-item.big .book-author {
+  font-size: 1.1rem; /* tác giả cũng lớn hơn */
+}
+
+.book-item.big .book-logo {
+  width: 48px !important; /* logo lớn hơn */
+  height: 48px !important;
+  padding: 5px;
+}
+
+.book-item.big .book-year {
+  font-size: 1rem; /* năm lớn hơn */
+}
+
+
+
+
+
+/* =========================================================
+   =============== RESPONSIVE ==============================
+   ========================================================= */
+/* Tablet: chỉ còn 3 cột */
+@media (max-width: 992px) {
+  .book-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile: 2 cột + thu nhỏ logo & font */
+@media (max-width: 600px) {
+  .book-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Logo nhỏ hơn trên mobile */
+  .book-logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .book-year {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+  }
+
+  /* Sách lớn chiếm 2 cột nhưng không quá cao */
+  .book-item.big {
+    grid-column: span 2;
+    grid-row: auto;
+  }
+
+  /* Tên & tác giả thu nhỏ một chút cho vừa mobile */
+  .book-item.big .book-title {
+    font-size: 1.2rem;
+  }
+
+  .book-item.big .book-author {
+    font-size: 1rem;
+  }
+}
