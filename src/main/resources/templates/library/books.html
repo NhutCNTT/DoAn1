@@ -1,0 +1,374 @@
+<!-- templates/library/books.html -->
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Quản lý sách — Thư viện CTUT</title>
+    <link rel="icon" type="image/png" sizes="64x64" th:href="@{/images/logo_tab.PNG}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap & Icons (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"/>
+
+    <!-- CSS dự án -->
+    <link rel="stylesheet" th:href="@{/css/library/header.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/sidebar.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/layout.css}" />
+    <link rel="stylesheet" th:href="@{/css/library/books.css}" />
+</head>
+
+<body>
+<!-- Topbar -->
+<div th:replace="components/library/header :: header"></div>
+
+<div class="app-layout d-flex">
+    <!-- Sidebar: truyền active = 'books' -->
+    <aside th:replace="components/library/sidebar :: sidebar('books')"></aside>
+
+    <main class="flex-grow-1">
+        <div class="container py-3">
+            <h1 class="h4 mb-3">Quản lý sách</h1>
+
+            <!-- Actions -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <button id="btnExportCsv" class="btn btn-outline-secondary">
+                    <i class="bi bi-filetype-csv me-1"></i> Xuất CSV
+                </button>
+
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                    <i class="bi bi-upload me-1"></i> Nhập CSV
+                </button>
+
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickAddModal">
+                    <i class="bi bi-lightning-charge me-1"></i> Thêm nhanh
+                </button>
+
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bookModal">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm sách
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                    <div class="input-group search-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input id="searchInput" type="text" class="form-control" placeholder="Tìm theo tên sách, mã sách, ISBN, tác giả..." />
+                    </div>
+
+                    <div class="dropdown-select">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Đang lưu thông">Đang lưu thông</option>
+                            <option value="Tạm ngưng">Tạm ngưng</option>
+                            <option value="Hết sách">Hết sách</option>
+                        </select>
+                    </div>
+
+                    <div class="dropdown-select">
+                        <select id="categoryFilter" class="form-select">
+                            <option value="">Tất cả thể loại</option>
+                        </select>
+                    </div>
+
+                    <div class="ms-auto">
+                        <button id="btnReset" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-repeat me-1"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên sách</th>
+                            <th>Tác giả</th>
+                            <th>ISBN</th>
+                            <th>Thể loại</th>
+                            <th class="text-end">Giá</th>
+                            <th class="text-end">SL</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div id="rowsInfo" class="small text-muted">Hiển thị 0–0 / 0</div>
+                    <nav>
+                        <ul class="pagination mb-0">
+                            <li class="page-item"><button id="btnPrev" class="page-link">Trước</button></li>
+                            <li class="page-item"><button id="btnNext" class="page-link">Sau</button></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal: Thêm sách -->
+<div class="modal fade" id="bookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form id="bookForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookModalTitle">Thêm sách</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <label class="form-label">Mã sách</label>
+                        <input name="code" class="form-control" placeholder="BK-0001" required />
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label">Tên sách</label>
+                        <input name="title" class="form-control" required />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Tác giả</label>
+                        <input name="author" class="form-control" required />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">ISBN</label>
+                        <input name="isbn" class="form-control" placeholder="978-..." />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Thể loại</label>
+                        <input name="category" class="form-control" list="categoryList" required />
+                        <datalist id="categoryList"></datalist>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Giá (₫)</label>
+                        <input name="price" type="number" min="0" step="1000" class="form-control" value="0" />
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Số lượng</label>
+                        <input name="quantity" type="number" min="0" step="1" class="form-control" value="1" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Trạng thái</label>
+                        <select name="status" class="form-select">
+                            <option>Đang lưu thông</option>
+                            <option>Tạm ngưng</option>
+                            <option>Hết sách</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea name="description" rows="3" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <input type="hidden" name="editIndex" value="" />
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Thêm nhanh ISBN -->
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="quickAddForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm nhanh bằng ISBN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">ISBN</label>
+                    <input name="isbn" id="quickIsbn" class="form-control" placeholder="978-..." required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Số lượng</label>
+                    <input name="quantity" id="quickQty" type="number" class="form-control" min="1" value="1" required />
+                </div>
+                <p class="small text-muted mb-0">Nhập ISBN để hệ thống tạo nhanh bản ghi sách.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-success">Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Nhập CSV -->
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="importCsvForm" class="modal-content" enctype="multipart/form-data">
+            <div class="modal-header">
+                <h5 class="modal-title">Nhập sách từ CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Chọn file CSV</label>
+                    <input type="file" name="csvFile" id="csvFileInput" class="form-control" accept=".csv" required />
+                </div>
+                <div class="small text-muted">
+                    Hỗ trợ cột:
+                    <code>code, title, author, isbn, category, price, quantity, status</code>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary">Tải lên</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JS dự án -->
+<script defer th:src="@{/js/library/active-menu.js}"></script>
+<script defer th:src="@{/js/header.js}"></script>
+<script defer th:src="@{/js/sidebar.js}"></script>
+
+<!-- Logic trang (demo data) -->
+<script>
+    let books = [
+        { code: "BK-0001", title: "Lập trình Java", author: "Nguyễn Văn A", isbn: "9780000001", category: "CNTT", price: 120000, quantity: 5, status: "Đang lưu thông", description: "" },
+        { code: "BK-0002", title: "Giải tích 1", author: "Trần B", isbn: "9780000002", category: "Toán", price: 98000, quantity: 0, status: "Hết sách", description: "" },
+    ];
+
+    const tbody = document.getElementById("tableBody");
+    const rowsInfo = document.getElementById("rowsInfo");
+
+    function money(v){ try{ return Number(v||0).toLocaleString()+"₫"; }catch{ return v; } }
+
+    function render(){
+        tbody.innerHTML = books.map((b,i)=>`
+          <tr data-index="${i}">
+            <td>${b.code}</td>
+            <td>${b.title}</td>
+            <td>${b.author}</td>
+            <td>${b.isbn}</td>
+            <td>${b.category}</td>
+            <td class="text-end">${money(b.price)}</td>
+            <td class="text-end">${b.quantity}</td>
+            <td>${b.status}</td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary editBtn" data-index="${i}" title="Sửa"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger deleteBtn" data-index="${i}" title="Xóa"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>`).join("");
+        rowsInfo.textContent = `Hiển thị 1–${books.length} / ${books.length}`;
+    }
+    render();
+
+    // Sửa / Xóa
+    tbody.addEventListener("click",(e)=>{
+        const btn = e.target.closest("button"); if(!btn) return;
+        const idx = Number(btn.dataset.index); if(Number.isNaN(idx)) return;
+
+        if(btn.classList.contains("editBtn")){
+            const b = books[idx]; const f = document.getElementById("bookForm");
+            f.elements["code"].value = b.code||"";   f.elements["title"].value = b.title||"";
+            f.elements["author"].value = b.author||""; f.elements["isbn"].value = b.isbn||"";
+            f.elements["category"].value = b.category||""; f.elements["price"].value = b.price??0;
+            f.elements["quantity"].value = b.quantity??1; f.elements["status"].value = b.status||"Đang lưu thông";
+            f.elements["description"].value = b.description||""; f.elements["editIndex"].value = String(idx);
+            document.getElementById("bookModalTitle").textContent = "Chỉnh sửa sách";
+            new bootstrap.Modal(document.getElementById("bookModal")).show(); return;
+        }
+        if(btn.classList.contains("deleteBtn")){
+            const b = books[idx];
+            if(confirm(`Xóa sách:\n${b.code} - ${b.title}?`)){ books.splice(idx,1); render(); }
+        }
+    });
+
+    // Submit form Thêm/Sửa
+    document.getElementById("bookForm").addEventListener("submit",(e)=>{
+        e.preventDefault(); const f = e.target;
+        const data = {
+            code: f.elements["code"].value.trim(),
+            title: f.elements["title"].value.trim(),
+            author: f.elements["author"].value.trim(),
+            isbn: f.elements["isbn"].value.trim(),
+            category: f.elements["category"].value.trim(),
+            price: Number(f.elements["price"].value||0),
+            quantity: Math.max(0, Number(f.elements["quantity"].value||0)),
+            status: f.elements["status"].value,
+            description: f.elements["description"].value||"",
+        };
+        const editIndex = f.elements["editIndex"].value;
+        if(editIndex!==""){ books[Number(editIndex)] = data; }
+        else{ if(!data.code) data.code = "BK-"+String(books.length+1).padStart(4,"0"); books.push(data); }
+        render();
+        const modalEl = document.getElementById("bookModal");
+        (bootstrap.Modal.getInstance(modalEl)||new bootstrap.Modal(modalEl)).hide();
+        f.reset(); document.getElementById("bookModalTitle").textContent = "Thêm sách";
+    });
+
+    // Thêm nhanh ISBN
+    document.getElementById("quickAddForm")?.addEventListener("submit",(e)=>{
+        e.preventDefault();
+        const isbn = document.getElementById("quickIsbn").value.trim();
+        const qty  = Math.max(1, Number(document.getElementById("quickQty").value||1));
+        if(!isbn) return;
+        books.push({
+            code: "BK-"+String(books.length+1).padStart(4,"0"),
+            title: "Sách ISBN "+isbn, author:"Chưa rõ", isbn,
+            category:"Chưa phân loại", price:0, quantity:qty, status:"Đang lưu thông", description:""
+        });
+        render();
+        const modalEl = document.getElementById("quickAddModal");
+        (bootstrap.Modal.getInstance(modalEl)||new bootstrap.Modal(modalEl)).hide();
+        e.target.reset();
+    });
+
+    // Nhập CSV
+    const importCsvForm = document.getElementById("importCsvForm");
+    const csvInput = document.getElementById("csvFileInput");
+    function parseCSV(text){ return text.split(/\r?\n/).map(line=>line.split(",")); }
+
+    importCsvForm?.addEventListener("submit",(e)=>{
+        e.preventDefault();
+        const file = csvInput.files?.[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+            const text = String(reader.result||"");
+            const rows = parseCSV(text).filter(r=>r.length && r.some(c=>c.trim()!==""));
+            if(rows.length<2) return alert("CSV không có dữ liệu");
+            const headers = rows[0].map(h=>h.trim().toLowerCase());
+            const idx = (k)=>headers.indexOf(k);
+            for(let r=1;r<rows.length;r++){
+                const cells = rows[r];
+                books.push({
+                    code: (idx("code")>=0 && cells[idx("code")]?.trim()) || "BK-"+String(books.length+1).padStart(4,"0"),
+                    title: (idx("title")>=0 && cells[idx("title")]?.trim()) || "Chưa đặt tên",
+                    author: (idx("author")>=0 && cells[idx("author")]?.trim()) || "Chưa rõ",
+                    isbn: (idx("isbn")>=0 && cells[idx("isbn")]?.trim()) || "",
+                    category: (idx("category")>=0 && cells[idx("category")]?.trim()) || "Chưa phân loại",
+                    price: Number((idx("price")>=0 && cells[idx("price")])||0),
+                    quantity: Math.max(0, Number((idx("quantity")>=0 && cells[idx("quantity")])||1)),
+                    status: (idx("status")>=0 && cells[idx("status")]?.trim()) || "Đang lưu thông",
+                    description: "",
+                });
+            }
+            render();
+            const modalEl = document.getElementById("importCsvModal");
+            (bootstrap.Modal.getInstance(modalEl)||new bootstrap.Modal(modalEl)).hide();
+            importCsvForm.reset();
+        };
+        reader.readAsText(file, "utf-8");
+    });
+</script>
+</body>
+</html>

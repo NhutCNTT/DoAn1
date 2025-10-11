@@ -1,0 +1,121 @@
+:root {
+    --brand: #1a73e8;
+    --ink: #0f172a;
+    --muted: #6b7280;
+    --radius: 18px;
+    --shadow: 0 8px 24px rgba(10, 20, 40, .06);
+}
+
+body {
+    background: #f6f8fb;
+    color: var(--ink);
+}
+
+.container.py-4 {
+    max-width: 1240px
+}
+
+.card {
+    border: 0;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    background: #fff
+}
+
+
+/* Toolbar */
+.toolbar {
+    gap: 10px
+}
+
+.toolbar .form-control,
+.toolbar .form-select {
+    height: 44px
+}
+
+.rounded-12 {
+    border-radius: 12px
+}
+
+
+/* Buttons */
+.btn-brand {
+    border: 1px solid var(--brand);
+    color: #fff;
+    background: var(--brand)
+}
+
+.btn-brand:hover {
+    opacity: .9
+}
+
+
+/* Table */
+.table-modern thead th {
+    font-size: .82rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .35px;
+    border: 0
+}
+
+.table-modern tbody td {
+    vertical-align: middle;
+    border-top: 1px solid #eef2f7
+}
+
+.table-responsive {
+    border-radius: 12px
+}
+
+
+/* Badge */
+.badge-soft {
+    border-radius: 999px;
+    padding: .35rem .6rem;
+    font-weight: 700;
+    font-size: .75rem
+}
+
+.badge-soft.success {
+    background: #e8f7ee;
+    color: #198754
+}
+
+.badge-soft.warning {
+    background: #fff3cd;
+    color: #b58100
+}
+
+.badge-soft.secondary {
+    background: #e9edf3;
+    color: #334155
+}
+
+
+/* Avatar */
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e9eef6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #475569;
+    margin-right: .5rem
+}
+
+
+/* Empty state */
+.empty {
+    padding: 40px 12px;
+    color: var(--muted)
+}
+
+
+/* Pagination */
+.pagination .page-link {
+    border: 0
+}

@@ -1,0 +1,20 @@
+body {
+    background: #f6f8fb;
+}
+
+.card {
+    border-radius: 1rem;
+}
+
+.search-group {
+    min-width: 300px;
+}
+
+.dropdown-select {
+    min-width: 200px;
+}
+
+.table th,
+.table td {
+    vertical-align: middle;
+}
